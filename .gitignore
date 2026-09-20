@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+.vercel/
+.env
+.env.*
+!.env.example
+# Planilha de referência local; não é necessária para executar o app.
+/metas Set.xlsx
