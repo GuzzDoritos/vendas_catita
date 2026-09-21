@@ -945,3 +945,18 @@ footer button {
     scroll-behavior:auto!important;
   }
 }
+.header-actions { display:flex; align-items:center; gap:20px; }
+.form-fields { border:0; padding:0; margin:0; min-width:0; }
+.login-page { min-height:90dvh; display:grid; place-items:center; padding:30px 22px; }
+.login-panel { width:100%; max-width:360px; }
+.login-panel>.brand { font-size:56px; }
+.login-panel>.eyebrow { margin:16px 0 36px; color:var(--muted); }
+.login-panel h1 { font-size:29px; margin-bottom:32px; }
+.password-input { width:100%; border:1px solid #d7c5cd; background:white; border-radius:7px; padding:13px 14px; color:var(--wine); font-size:18px; }
+.loading-page { padding-top:25vh; text-align:center; color:var(--muted); }
+.dialog .login-page { min-height:0; padding:0; }
+.dialog .login-panel>.brand,.dialog .login-panel>.eyebrow,.dialog .login-panel>h1 { display:none; }
+@media(max-width:700px) {
+  .header-actions { gap:13px; }
+  .header-inner .brand span { display:none; }
+}

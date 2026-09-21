@@ -1,11 +1,14 @@
 # Catita · Vendas & metas
 
-Aplicativo pessoal em React + TypeScript + Vite. Frontend-only, sem conta ou backend. Dados em localStorage, separados por mês.
+React + TypeScript + Vite, com login por senha compartilhada e persistência em Neon Postgres. Interface em português, voltada ao celular. API em Vercel Functions, no mesmo repositório.
 
 ## Executar
 
+Configure `.env.local` com `DATABASE_URL`, `APP_PASSWORD` e `SESSION_SECRET`, conforme [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ```sh
 npm install
+npm run db:migrate
 npm run dev
 ```
 
@@ -14,41 +17,46 @@ No PowerShell com scripts desabilitados, use `npm.cmd` no lugar de `npm`.
 ```sh
 npm test
 npm run build
-npm run preview
+npm run db:check
 ```
 
-Os testes usam o suporte a TypeScript do Node 22.6 ou superior.
+Use Node 22.x. `npm run dev` executa também a API local; `npm run preview` serve somente o frontend estático.
 
 ## Uso
 
-1. Defina as três metas e marque as folgas do mês. Inicialmente todos os dias são de trabalho.
+1. Entre com a senha, defina as três metas e marque as folgas do mês. Inicialmente todos os dias são de trabalho.
 2. Lance o total de cada data; editar substitui o valor anterior. Campo vazio remove o lançamento e zero confirma um dia sem vendas.
 3. Hoje entra no divisor enquanto estiver aberto. Marque “Encerrar hoje” para distribuir o saldo somente pelos próximos dias de trabalho.
-4. Use o seletor de mês para consultar ou editar outros períodos.
-5. Exporte backups JSON regularmente. A restauração substitui o conjunto de dados após confirmação.
+4. Use o seletor de mês para consultar ou editar outros períodos. “Atualizar” busca mudanças de outro aparelho.
+5. Em Backup, exporte JSON, restaure um arquivo ou busque dados da versão anterior neste navegador. Restaurar substitui os dados na nuvem após confirmação.
 
 A média é o saldo da meta dividido pelos dias restantes de trabalho, arredondado para cima em centavos. Vendas em folgas continuam no acumulado. Metas atingidas mostram zero; falta de dias disponíveis mostra um traço com indicação explícita. Datas usam o fuso America/Sao_Paulo.
 
-Os dados ficam no navegador e no endereço onde o app foi aberto. Limpar os dados do site, mudar de endereço ou trocar de aparelho exige restauração de backup. Prefira editar em uma única aba. Sem service worker nesta V1: o app precisa carregar antes de funcionar sem rede. Fontes externas têm fallback local.
+Os dados antigos em localStorage são preservados; não são enviados ao Neon automaticamente. O app precisa de internet para ler e salvar. Não há cadastro de usuários nem sincronização offline. Fontes externas têm fallback local.
 
 ## Código
 
-- `src/App.tsx`: tela principal, formulários e persistência direta.
+- `src/App.tsx`, `src/Login.tsx`: tela principal, formulários e login.
 - `src/domain.ts`: tipos, cálculos, datas, moeda e validação de backup.
 - `src/styles.css`: tema e layout responsivo.
-- `tests/domain.test.ts`: regras de cálculo e limites importantes.
+- `src/api.ts`: chamadas do frontend para a API.
+- `api/index.ts`: login, logout, sessão e operações de dados.
+- `server/auth.ts`, `server/database.ts`: autenticação e acesso ao Neon.
+- `migrations/001_initial.sql`: schema, leitura e substituição atômica dos dados.
+- `tests/`: testes de domínio, sessão e proteção HTTP.
 
-A planilha original é uma referência e não é carregada automaticamente: a aplicação começa vazia para não misturar dados reais com exemplos.
+A planilha original é uma referência e não é carregada automaticamente. O plano arquitetural original documenta a ideia inicial; este README descreve a implementação atual.
 
 ## Publicar no Vercel
 
 1. Envie este repositório ao GitHub.
 2. Acesse https://vercel.com/new, conecte o GitHub e importe o repositório.
-3. Confira as configurações: framework **Vite**, diretório raiz **./**, comando de build **npm run build**, pasta de saída **dist**. Não há variáveis de ambiente a configurar.
-4. Clique em **Deploy** e abra o endereço de produção gerado.
+3. Confira as configurações: framework **Vite**, diretório raiz **./**, comando de build **npm run build**, pasta de saída **dist** e Node **22.x**.
+4. Configure `DATABASE_URL`, `APP_PASSWORD` e `SESSION_SECRET` no ambiente Production e aplique a migração no banco de destino.
+5. Clique em **Deploy** e abra o endereço de produção gerado. Veja [DEPLOYMENT.md](DEPLOYMENT.md) para as instruções completas.
 
 Novos pushes para a branch de produção (`main`) geram novas publicações automaticamente. Não é necessário enviar `dist` ou `node_modules` ao GitHub.
 
-Para levar lançamentos do localhost para o site publicado, exporte o backup no aplicativo local e restaure no endereço definitivo. Use sempre o mesmo endereço de produção: cada domínio tem seu próprio localStorage.
+Para levar lançamentos da V1 no localhost para o site publicado, exporte o backup antigo e restaure no endereço definitivo. Após a importação, os dados ficam no Neon e podem ser acessados em outros aparelhos com a senha.
 
 Referência: https://vercel.com/docs/frameworks/frontend/vite

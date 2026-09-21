@@ -7,8 +7,21 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --experimental-strip-types --test tests/domain.test.ts"
+    "test": "node --experimental-strip-types --test tests/domain.test.ts tests/auth.test.ts tests/api.test.ts",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:check": "node scripts/check-database.mjs"
   },
-  "dependencies": { "react": "^19.1.0", "react-dom": "^19.1.0" },
-  "devDependencies": { "@types/react": "^19.1.0", "@types/react-dom": "^19.1.0", "@vitejs/plugin-react": "^4.5.0", "typescript": "~5.8.3", "vite": "^6.3.5" }
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.5.0",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5"
+  }
 }
