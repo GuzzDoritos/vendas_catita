@@ -7,8 +7,12 @@ export function parseClock(value: string): number | null {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return null;
   const [hours, minutes] = value.split(':').map(Number); return hours * 60 + minutes;
 }
-export function expectedHours(date: string, defaults: ShiftDefaults, holiday = false) {
-  return holiday ? defaults.holiday : new Date(`${date}T12:00:00`).getDay() === 0 ? defaults.sunday : defaults.regular;
+export function expectedHours(date: string, defaults: ShiftDefaults) {
+  return new Date(`${date}T12:00:00`).getDay() === 0 ? defaults.sunday : defaults.regular;
+}
+// Keep legacy records intact; editing one converts it to a single continuous shift.
+export function shiftBounds(shift: Shift | undefined): [number | null, number | null] {
+  return shift ? [shift.times[0], shift.times[2] === null ? shift.times[1] : shift.times[3]] : [null, null];
 }
 export function shiftError(shift: Shift): string | null {
   if (!Array.isArray(shift.times) || shift.times.length !== 4 || shift.times.some(v => v !== null && (!Number.isInteger(v) || v < 0 || v > 1439))) return 'Horário inválido.';

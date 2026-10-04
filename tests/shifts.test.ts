@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { calculate, createMonth, emptyData, parseProd, validateData } from '../src/domain.ts';
-import { defaultHours, duration, expectedHours, parseClock, shiftError, shiftTotals } from '../src/shifts.ts';
+import { defaultHours, duration, expectedHours, parseClock, shiftBounds, shiftError, shiftTotals } from '../src/shifts.ts';
 import type { Shift } from '../src/shifts.ts';
 
 test('two periods exclude the break, and only positive extra hours accumulate', () => {
@@ -25,11 +25,11 @@ test('single period, open periods, absent clock times and same-day ordering', ()
   assert.equal(parseClock('00:00'), 0); assert.equal(parseClock('24:00'), null);
 });
 
-test('Sunday, holiday defaults and historical expected duration', () => {
+test('Sunday defaults and historical expected duration', () => {
   const defaults = defaultHours();
   assert.equal(expectedHours('2026-10-04', defaults), 360);
   assert.equal(expectedHours('2026-10-05', defaults), 500);
-  assert.equal(expectedHours('2026-10-04', defaults, true), 180);
+
   const shift: Shift = { times: [600, 1100, null, null], expected: 500, holiday: false };
   defaults.regular = 400;
   assert.equal(shiftTotals(shift).extra, 0);
@@ -63,4 +63,13 @@ test('v2 backup roundtrip with all fields and Impulso validation', () => {
   assert.equal(calculate(month, '2026-10-01').impulso.target, 5000);
   month.impulso = 10001; assert.throws(() => validateData(data));
   month.impulso = 5000; month.shifts['2026-10-01'].times[1] = 400; assert.throws(() => validateData(data));
+});
+
+test('single continuous shift uses full elapsed time and preserves unfinished legacy exits', () => {
+  const shift: Shift = { times: [480, 1066, null, null], expected: 500, holiday: false };
+  assert.deepEqual(shiftTotals(shift), { worked: 586, extra: 86, complete: true, partial: false });
+  assert.deepEqual(shiftBounds(shift), [480, 1066]);
+  assert.deepEqual(shiftBounds({ ...shift, times: [480, 720, 780, 1066] }), [480, 1066]);
+  assert.deepEqual(shiftBounds({ ...shift, times: [480, 720, 780, null] }), [480, null]);
+  assert.deepEqual(shiftBounds(undefined), [null, null]);
 });

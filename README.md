@@ -34,9 +34,9 @@ A média é o saldo da meta dividido pelos dias restantes de trabalho, arredonda
 
 Registre **Prod** manualmente no lançamento do dia. A média mensal considera somente os valores preenchidos, incluindo zero. O gráfico alterna entre vendas e Prod; dias sem lançamento ficam sem ponto.
 
-Em **Ponto**, registre entrada/saída antes e depois do intervalo. Um único período também é válido; horários devem estar em ordem e dentro do mesmo dia. O intervalo não entra nas horas trabalhadas. Pontos incompletos somam apenas períodos encerrados e não apuram extras. Horas extras são somente o saldo positivo diário, sem compensar dias com menos horas. Trabalho em folga conta integralmente como extra.
+Em **Ponto**, registre uma entrada e uma saída, dentro do mesmo dia. Todo o tempo entre elas conta como trabalhado, sem desconto de intervalo. Pontos sem saída ficam em andamento e não apuram extras. Horas extras são somente o saldo positivo diário, sem compensar dias com menos horas. Trabalho em folga conta integralmente como extra.
 
-Em **Jornadas**, configure a duração prevista para segunda a sábado, domingos e feriados (padrões: 8h20, 6h e 3h). Feriados são marcados manualmente. Cada ponto guarda sua própria jornada prevista; mudar o padrão do mês não altera registros anteriores. A folga é compartilhada entre vendas e ponto.
+Em **Jornadas**, configure a duração prevista para segunda a sábado e domingos (padrões: 8h20 e 6h). Cada ponto guarda sua própria jornada prevista; mudar o padrão do mês não altera registros anteriores. A folga é compartilhada entre vendas e ponto. Registros antigos com dois períodos mantêm os cálculos originais até serem editados; o formulário avisa que salvar passa a contar o período contínuo.
 
 Os dados antigos em localStorage são preservados; não são enviados ao Neon automaticamente. O app precisa de internet para ler e salvar. Não há cadastro de usuários nem sincronização offline. Fontes externas têm fallback local.
 

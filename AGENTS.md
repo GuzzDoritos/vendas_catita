@@ -10,7 +10,7 @@
 - Business dates use YYYY-MM-DD in America/Sao_Paulo. Never convert a date-only key through UTC.
 - Goals are monthly: optional Impulso, then Gatilho, Acelera, Incrível. Preserve historical values; never shift legacy goal positions.
 - Folga is shared between sales and time tracking. Sales on a folga still count; folgas never count as remaining sales days.
-- Shifts have up to two chronological entry/exit pairs within the same date. Breaks are the gap between pairs. Never invent a missing clock-out or silently treat an unfinished shift as zero.
+- New shifts have one entry and one exit within the same date, with no break deduction. No holiday-specific setting. Keep legacy two-period records and unused holiday storage fields compatible; editing a legacy shift converts it to continuous time with a visible notice. Never invent a missing clock-out or silently treat an unfinished shift as zero.
 - Store time as integer minutes. Worked hours are derived from completed pairs. Extra hours are max(0, worked - expected), calculated only when the shift is complete. No negative balance or payroll rules.
 - Preserve the expected duration saved with each shift when editing monthly defaults.
 - Missing values differ from zero. Charts must not turn missing or future entries into zero data.

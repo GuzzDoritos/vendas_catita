@@ -55,7 +55,7 @@ O backup deve ter no máximo 900 KB e não conter vendas futuras. A restauraçã
 
 ## Persistência e conflitos
 
-`monthly_plans` contém metas e jornadas padrão; `daily_entries`, vendas, Prod e folgas; `shift_entries`, os dois períodos e a jornada prevista de cada data. `app_state` guarda uma revisão global; `login_attempts` implementa o limite de login. Backups usam JSON versão 2; arquivos da versão 1 são convertidos ao importar.
+`monthly_plans` contém metas e jornadas padrão; `daily_entries`, vendas, Prod e folgas; `shift_entries`, os horários e a jornada prevista de cada data. `app_state` guarda uma revisão global; `login_attempts` implementa o limite de login. Backups usam JSON versão 2; arquivos da versão 1 são convertidos ao importar. Novos pontos usam somente uma entrada e saída; os campos antigos de segundo período e feriado permanecem para compatibilidade, sem exigir migração.
 
 A migração 002 preserva vendas, metas e folgas existentes. Impulso e Prod começam vazios. Ela bloqueia gravações por versões antigas do servidor para proteger os novos campos: aplique a migração junto da publicação do código novo e recarregue abas antigas após o deploy.
 
