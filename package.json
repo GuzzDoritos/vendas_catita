@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --experimental-strip-types --test tests/domain.test.ts tests/auth.test.ts tests/api.test.ts",
+    "test": "node --experimental-strip-types --test tests/domain.test.ts tests/auth.test.ts tests/api.test.ts tests/shifts.test.ts",
     "db:migrate": "node scripts/migrate.mjs",
     "db:check": "node scripts/check-database.mjs"
   },

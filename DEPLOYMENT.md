@@ -28,7 +28,7 @@ npm run dev
 1. Envie o código para o repositório conectado ao Vercel.
 2. Em **Project → Settings → Environment Variables**, adicione `DATABASE_URL`, `APP_PASSWORD` e `SESSION_SECRET` ao ambiente **Production**.
 3. Use Node.js **22.x**. Mantenha o framework **Vite**, build `npm run build` e saída `dist`.
-4. Se o banco de produção ainda não tiver o schema, execute `migrations/001_initial.sql` no SQL Editor desse banco Neon. Alternativamente, rode `npm run db:migrate` localmente com a connection string correspondente. A migração inicial pode ser repetida sem apagar dados.
+4. Rode `npm run db:migrate` com a connection string do banco de destino. O script aplica as migrações pendentes em ordem e registra cada arquivo em `schema_migrations`; novas execuções não reaplicam arquivos já registrados. Use o script também em bancos existentes.
 5. Faça um novo deploy. Mudanças nas variáveis exigem redeploy.
 6. Abra o endereço de produção, entre com a senha e registre um valor. Reabra em outro navegador e confirme que o valor aparece.
 
@@ -55,7 +55,9 @@ O backup deve ter no máximo 900 KB e não conter vendas futuras. A restauraçã
 
 ## Persistência e conflitos
 
-`monthly_plans` e `daily_entries` contêm os dados de negócio. `app_state` guarda uma revisão global; `login_attempts` implementa o limite de login. A API preserva o formato JSON da V1 para reutilizar os cálculos e o backup.
+`monthly_plans` contém metas e jornadas padrão; `daily_entries`, vendas, Prod e folgas; `shift_entries`, os dois períodos e a jornada prevista de cada data. `app_state` guarda uma revisão global; `login_attempts` implementa o limite de login. Backups usam JSON versão 2; arquivos da versão 1 são convertidos ao importar.
+
+A migração 002 preserva vendas, metas e folgas existentes. Impulso e Prod começam vazios. Ela bloqueia gravações por versões antigas do servidor para proteger os novos campos: aplique a migração junto da publicação do código novo e recarregue abas antigas após o deploy.
 
 Como o conjunto pessoal é pequeno, cada gravação substitui o snapshot completo em uma transação. A revisão é conferida com bloqueio no banco: duas gravações concorrentes da mesma revisão não podem sobrescrever uma à outra. Não há ORM, fila offline ou sincronização automática em tempo real.
 

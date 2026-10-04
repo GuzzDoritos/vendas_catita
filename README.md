@@ -24,7 +24,7 @@ Use Node 22.x. `npm run dev` executa também a API local; `npm run preview` serv
 
 ## Uso
 
-1. Entre com a senha, defina as três metas e marque as folgas do mês. Inicialmente todos os dias são de trabalho.
+1. Entre com a senha, defina Gatilho, Acelera e Incrível e, se desejar, Impulso. Marque as folgas do mês; inicialmente todos os dias são de trabalho.
 2. Lance o total de cada data; editar substitui o valor anterior. Campo vazio remove o lançamento e zero confirma um dia sem vendas.
 3. Hoje entra no divisor enquanto estiver aberto. Marque “Encerrar hoje” para distribuir o saldo somente pelos próximos dias de trabalho.
 4. Use o seletor de mês para consultar ou editar outros períodos. “Atualizar” busca mudanças de outro aparelho.
@@ -32,17 +32,25 @@ Use Node 22.x. `npm run dev` executa também a API local; `npm run preview` serv
 
 A média é o saldo da meta dividido pelos dias restantes de trabalho, arredondado para cima em centavos. Vendas em folgas continuam no acumulado. Metas atingidas mostram zero; falta de dias disponíveis mostra um traço com indicação explícita. Datas usam o fuso America/Sao_Paulo.
 
+Registre **Prod** manualmente no lançamento do dia. A média mensal considera somente os valores preenchidos, incluindo zero. O gráfico alterna entre vendas e Prod; dias sem lançamento ficam sem ponto.
+
+Em **Ponto**, registre entrada/saída antes e depois do intervalo. Um único período também é válido; horários devem estar em ordem e dentro do mesmo dia. O intervalo não entra nas horas trabalhadas. Pontos incompletos somam apenas períodos encerrados e não apuram extras. Horas extras são somente o saldo positivo diário, sem compensar dias com menos horas. Trabalho em folga conta integralmente como extra.
+
+Em **Jornadas**, configure a duração prevista para segunda a sábado, domingos e feriados (padrões: 8h20, 6h e 3h). Feriados são marcados manualmente. Cada ponto guarda sua própria jornada prevista; mudar o padrão do mês não altera registros anteriores. A folga é compartilhada entre vendas e ponto.
+
 Os dados antigos em localStorage são preservados; não são enviados ao Neon automaticamente. O app precisa de internet para ler e salvar. Não há cadastro de usuários nem sincronização offline. Fontes externas têm fallback local.
 
 ## Código
 
 - `src/App.tsx`, `src/Login.tsx`: tela principal, formulários e login.
 - `src/domain.ts`: tipos, cálculos, datas, moeda e validação de backup.
+- `src/shifts.ts`, `src/ShiftControl.tsx`: cálculos e registro de ponto.
+- `src/TrendChart.tsx`: gráfico SVG de vendas e Prod, com tabela acessível.
 - `src/styles.css`: tema e layout responsivo.
 - `src/api.ts`: chamadas do frontend para a API.
 - `api/index.ts`: login, logout, sessão e operações de dados.
 - `server/auth.ts`, `server/database.ts`: autenticação e acesso ao Neon.
-- `migrations/001_initial.sql`: schema, leitura e substituição atômica dos dados.
+- `migrations/`: migrações numeradas de schema e funções de persistência.
 - `tests/`: testes de domínio, sessão e proteção HTTP.
 
 A planilha original é uma referência e não é carregada automaticamente. O plano arquitetural original documenta a ideia inicial; este README descreve a implementação atual.

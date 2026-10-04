@@ -1,28 +1,16 @@
-import { useEffect, useId, useRef, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
-import { GOALS, STORAGE_KEY, calculate, createMonth, money, moneyInput, monthDates, parseMoney, shiftMonth, todayKey, validateData } from './domain';
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import { ALL_GOALS, STORAGE_KEY, calculate, createMonth, money, moneyInput, monthDates, parseMoney, parseProd, prodLabel, shiftMonth, todayKey, validateData } from './domain';
 import type { Data, Day, Month } from './domain';
 import { ApiError, errorMessage, loadData, request } from './api';
 import Login from './Login';
+import Modal from './Modal';
+import ShiftControl from './ShiftControl';
+import TrendChart from './TrendChart';
 
 const monthLabel = (key: string) => new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(`${key}-01T12:00:00`));
 const dateLabel = (key: string) => new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long' }).format(new Date(`${key}T12:00:00`));
 const weekday = (key: string) => new Intl.DateTimeFormat('pt-BR', { weekday: 'short' }).format(new Date(`${key}T12:00:00`)).replace('.', '');
-
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  useEffect(() => {
-    dialog.current?.showModal();
-    const old = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = old; };
-  }, []);
-  return <dialog ref={dialog} aria-labelledby={titleId} className="dialog" onCancel={e => { e.preventDefault(); onClose(); }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-    <div className="dialog-heading"><h2 id={titleId}>{title}</h2><button type="button" className="close-button" aria-label="Fechar" onClick={onClose}>×</button></div>
-    {children}
-  </dialog>;
-}
 
 export default function App() {
   const [snapshot, setSnapshot] = useState<{ data: Data; revision: number } | null>(null);
@@ -57,6 +45,7 @@ function Dashboard({ initial, onLogout }: { initial: { data: Data; revision: num
   const [backup, setBackup] = useState(false);
   const [notice, setNotice] = useState('');
   const [filter, setFilter] = useState('all');
+  const [tab, setTab] = useState<'sales' | 'shifts'>('sales');
   const [pendingImport, setPendingImport] = useState<Data | null>(null);
   const [backupError, setBackupError] = useState('');
   const month = data.months[selected] ?? createMonth(selected);
@@ -126,6 +115,8 @@ function Dashboard({ initial, onLogout }: { initial: { data: Data; revision: num
 
       {storageError && <div className="error-banner" role="alert">{storageError} <button onClick={exportBackup}>Exportar cópia atual</button> <button disabled={saving} onClick={() => void refresh()}>Atualizar dados</button></div>}
 
+      <nav className="view-tabs" aria-label="Seção do mês"><button aria-pressed={tab === 'sales'} onClick={() => setTab('sales')}>Vendas</button><button aria-pressed={tab === 'shifts'} onClick={() => setTab('shifts')}>Ponto</button></nav>
+      {tab === 'shifts' ? <ShiftControl key={selected} month={month} monthKey={selected} today={today} disabled={saving || !!storageError} onSave={saveMonth} /> : <>
       <section className="overview" aria-label="Resumo do mês">
         <div className="overview-main"><p className="eyebrow">{isPast ? 'TOTAL VENDIDO' : 'VENDIDO NO MÊS'}</p><p className="total">{money(summary.total)}</p><p className="overview-note">{isPast ? 'Mês encerrado' : isCurrent ? `Até ${dateLabel(today)}` : 'Planejamento do mês'}</p></div>
         <div className="overview-side"><div className="workday-count"><strong>{summary.remaining}</strong><span>dias de trabalho<br />{isPast ? 'restantes' : 'pela frente'}</span></div>
@@ -136,11 +127,11 @@ function Dashboard({ initial, onLogout }: { initial: { data: Data; revision: num
 
       <section className="goals-section" aria-labelledby="goals-title">
         <div className="section-heading"><div><h2 id="goals-title">Suas metas</h2><p>{isPast ? 'O resultado de cada faixa neste mês.' : 'Quanto falta e o ritmo necessário para chegar lá.'}</p></div><button className="text-button" disabled={!!storageError || saving} onClick={() => setSettings(true)}>{configured ? 'Editar metas' : 'Definir metas'}</button></div>
-        {!configured && <div className="setup-note">Comece definindo as três metas do mês e marque suas folgas na lista abaixo.</div>}
+        {!configured && <div className="setup-note">Defina as metas do mês e marque suas folgas na lista abaixo.</div>}
         <div className="goals-table">
           <div className="goal-table-heading" aria-hidden="true"><span>FAIXA / PROGRESSO</span><span>FALTA VENDER</span><span>POR DIA RESTANTE</span></div>
-          {summary.goals.map((goal, i) => <div className={`goal-row goal-${i}`} key={GOALS[i]}>
-            <div className="goal-name"><div className="goal-title"><h3>{GOALS[i]}</h3><span>{goal.target ? `${Math.floor(goal.percent)}%` : '—'}</span></div><p>{goal.target ? `de ${money(goal.target)}` : 'Meta não definida'}</p><div className="progress-track" role="progressbar" aria-label={`Progresso ${GOALS[i]}`} aria-valuenow={Math.min(100, Math.floor(goal.percent))} aria-valuemin={0} aria-valuemax={100}><div style={{ width: `${Math.min(100, goal.percent)}%` }} /></div></div>
+          {[summary.impulso, ...summary.goals].map((goal, i) => <div className={`goal-row goal-${i}`} key={ALL_GOALS[i]}>
+            <div className="goal-name"><div className="goal-title"><h3>{ALL_GOALS[i]}</h3><span>{goal.target ? `${Math.floor(goal.percent)}%` : '—'}</span></div><p>{goal.target ? `de ${money(goal.target)}` : 'Meta não definida'}</p><div className="progress-track" role="progressbar" aria-label={`Progresso ${ALL_GOALS[i]}`} aria-valuenow={Math.min(100, Math.floor(goal.percent))} aria-valuemin={0} aria-valuemax={100}><div style={{ width: `${Math.min(100, goal.percent)}%` }} /></div></div>
             <div className="goal-gap"><span className="mobile-label">Falta vender</span><strong>{goal.target ? money(goal.gap) : '—'}</strong>{goal.target > 0 && goal.gap === 0 && <small>Meta atingida</small>}</div>
             <div className="goal-daily"><span className="mobile-label">Por dia restante</span><strong>{goal.daily !== null ? money(goal.daily) : '—'}</strong>{goal.target > 0 && goal.daily === null && <small>Sem dias restantes</small>}</div>
           </div>)}
@@ -149,6 +140,8 @@ function Dashboard({ initial, onLogout }: { initial: { data: Data; revision: num
         {summary.missing > 0 && <p className="missing-note">{summary.missing} {summary.missing === 1 ? 'dia anterior sem lançamento' : 'dias anteriores sem lançamento'}. O acumulado considera apenas os valores registrados. <button onClick={() => setFilter('missing')}>Ver dias</button></p>}
       </section>
 
+      <div className="prod-summary"><span>Prod médio do mês</span><strong>{summary.prodAverage === null ? '—' : prodLabel(summary.prodAverage)}</strong><small>{summary.prodCount} dias registrados</small></div>
+      <TrendChart month={month} today={today} />
       <section className="days-section" aria-labelledby="days-title">
         <div className="section-heading"><div><h2 id="days-title">Dia a dia</h2><p>{summary.workdays} dias de trabalho · {monthDates(selected).length - summary.workdays} folgas no mês</p></div><label className="filter-label"><span className="sr-only">Filtrar dias</span><select value={filter} onChange={e => setFilter(e.target.value)}><option value="all">Todos os dias</option><option value="missing">Sem lançamento</option><option value="off">Folgas</option></select></label></div>
         <div className="days-list">
@@ -158,7 +151,7 @@ function Dashboard({ initial, onLogout }: { initial: { data: Data; revision: num
             return <div key={date} className={`day-row ${current ? 'is-today' : ''} ${day.off ? 'is-off' : ''}`}>
               <div className="day-date"><strong>{date.slice(8)}</strong><span>{weekday(date)}</span></div>
               <div className="day-description"><strong>{current ? 'Hoje' : day.off ? 'Folga' : 'Trabalho'}</strong><span>{current && day.off ? 'Folga' : day.closed ? 'Encerrado' : day.off ? 'Fora da média diária' : future ? 'Planejado' : day.amount === null ? 'Sem lançamento' : current ? 'Em andamento' : 'Registrado'}</span></div>
-              <button className="day-value" disabled={!!storageError || saving} aria-label={`${dateLabel(date)}: ${day.amount === null ? 'registrar venda' : `editar ${money(day.amount)}`}`} onClick={() => setEditor(date)}>{day.amount !== null ? money(day.amount) : future || day.off ? '—' : 'Lançar valor'}</button>
+              <button className="day-value" disabled={!!storageError || saving} aria-label={`${dateLabel(date)}: editar venda e Prod`} onClick={() => setEditor(date)}>{day.amount !== null ? money(day.amount) : future || day.off ? '—' : 'Lançar valor'}<small>Prod {day.prod === null ? '—' : prodLabel(day.prod)}</small></button>
               <button className={`off-toggle ${day.off ? 'active' : ''}`} disabled={!!storageError || saving} aria-label={`Folga em ${dateLabel(date)}`} aria-pressed={day.off} onClick={async () => {
                 try { if (await saveMonth({ ...month, days: { ...month.days, [date]: { ...day, off: !day.off } } }) && !day.off && (day.amount ?? 0) > 0) setNotice('Folga marcada. A venda continua no acumulado.'); }
                 catch (err) { setNotice(err instanceof Error ? err.message : 'Não foi possível salvar.'); }
@@ -167,12 +160,13 @@ function Dashboard({ initial, onLogout }: { initial: { data: Data; revision: num
           })}
         </div>
       </section>
+      </>}
       <footer><span role="status">{saving ? 'Salvando…' : 'Dados salvos na nuvem.'}</span><button onClick={() => { setBackup(true); setBackupError(''); }}>Exportar um backup</button></footer>
     </main>
     <div className={`toast ${notice ? 'visible' : ''}`} role="status">{notice}</div>
 
     {editor && <DayEditor key={editor} date={editor} today={today} day={month.days[editor]} onClose={() => setEditor(null)} onSave={async day => { const saved = await saveMonth({ ...month, days: { ...month.days, [editor]: day } }); if (saved) setEditor(null); return saved; }} />}
-    {settings && <GoalEditor goals={month.goals} label={monthLabel(selected)} onClose={() => setSettings(false)} onSave={async goals => { const saved = await saveMonth({ ...month, goals }); if (saved) setSettings(false); return saved; }} />}
+    {settings && <GoalEditor goals={month.goals} impulso={month.impulso} label={monthLabel(selected)} onClose={() => setSettings(false)} onSave={async (goals, impulso) => { const saved = await saveMonth({ ...month, goals, impulso }); if (saved) setSettings(false); return saved; }} />}
     {backup && <Modal title="Seus dados" onClose={() => { setBackup(false); setPendingImport(null); }}>
       <p className="dialog-copy">As vendas ficam salvas na nuvem. Exporte uma cópia ou importe os dados da versão anterior.</p>
       <button className="button full-width" onClick={exportBackup}>Exportar backup JSON</button>
@@ -196,6 +190,7 @@ function Dashboard({ initial, onLogout }: { initial: { data: Data; revision: num
 
 function DayEditor({ date, today, day, onClose, onSave }: { date: string; today: string; day: Day; onClose: () => void; onSave: (day: Day) => Promise<boolean> }) {
   const [value, setValue] = useState(day.amount === null ? '' : moneyInput(day.amount));
+  const [prodValue, setProdValue] = useState(day.prod === null ? '' : moneyInput(day.prod));
   const [off, setOff] = useState(day.off);
   const [closed, setClosed] = useState(day.closed);
   const [error, setError] = useState('');
@@ -204,15 +199,18 @@ function DayEditor({ date, today, day, onClose, onSave }: { date: string; today:
   async function submit(e: FormEvent) {
     e.preventDefault(); if (busy) return;
     const amount = value.trim() === '' ? null : parseMoney(value);
+    const prod = prodValue.trim() === '' ? null : parseProd(prodValue);
+    if (prodValue.trim() !== '' && prod === null) { setError('Informe um Prod válido, como 2,33, com até duas casas decimais.'); return; }
     if (value.trim() !== '' && amount === null) { setError('Informe um valor válido, como 1.250,50.'); return; }
     if (closed && amount === null && date === today) { setError('Informe o total do dia, mesmo que seja zero, para encerrar.'); return; }
     setBusy(true); setError('');
-    try { await onSave({ off, amount: future ? day.amount : amount, closed: future || amount === null ? false : closed }); }
+    try { await onSave({ off, amount: future ? day.amount : amount, prod: future ? day.prod : prod, closed: future || amount === null ? false : closed }); }
     catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível salvar.'); }
     finally { setBusy(false); }
   }
   return <Modal title={dateLabel(date)} onClose={() => { if (!busy) onClose(); }}><form onSubmit={submit}><fieldset disabled={busy} className="form-fields">
     {!future ? <><label className="field-label" htmlFor="daily-amount">Total vendido no dia</label><div className="money-field"><span>R$</span><input autoFocus id="daily-amount" inputMode="decimal" placeholder="0,00" value={value} onChange={e => setValue(e.target.value)} /></div><p className="field-hint">O valor substitui o total anterior. Deixe vazio para remover o lançamento.</p></> : <p className="dialog-copy">Planeje sua folga. As vendas poderão ser registradas a partir desta data.</p>}
+    {!future && <div className="goal-field"><label className="field-label" htmlFor="daily-prod">Prod</label><div className="money-field"><input id="daily-prod" inputMode="decimal" placeholder="2,33" value={prodValue} onChange={e => setProdValue(e.target.value)} /></div><p className="field-hint">Opcional. A média usa apenas os valores preenchidos.</p></div>}
     <label className="checkbox-row"><input type="checkbox" checked={off} onChange={e => setOff(e.target.checked)} /><span>Dia de folga</span></label>
     {date === today && <label className="checkbox-row"><input type="checkbox" checked={closed} onChange={e => setClosed(e.target.checked)} /><span>Encerrar hoje<small>Distribuir o saldo apenas entre os próximos dias.</small></span></label>}
     {off && (parseMoney(value) ?? 0) > 0 && <p className="field-hint">A venda será mantida no acumulado, mesmo na folga.</p>}
@@ -221,22 +219,22 @@ function DayEditor({ date, today, day, onClose, onSave }: { date: string; today:
   </fieldset></form></Modal>;
 }
 
-function GoalEditor({ goals, label, onClose, onSave }: { goals: Month['goals']; label: string; onClose: () => void; onSave: (goals: Month['goals']) => Promise<boolean> }) {
-  const [values, setValues] = useState(goals.map(v => v ? moneyInput(v) : ''));
+function GoalEditor({ goals, impulso, label, onClose, onSave }: { goals: Month['goals']; impulso: number | null; label: string; onClose: () => void; onSave: (goals: Month['goals'], impulso: number | null) => Promise<boolean> }) {
+  const [values, setValues] = useState([impulso, ...goals].map(v => v ? moneyInput(v) : ''));
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   async function submit(e: FormEvent) {
     e.preventDefault(); if (busy) return; const parsed = values.map(parseMoney);
-    if (parsed.some(v => v === null || v <= 0)) { setError('Preencha as três metas com valores maiores que zero.'); return; }
-    const next = parsed as Month['goals'];
-    if (next[0] > next[1] || next[1] > next[2]) { setError('Use valores em ordem: Gatilho, Acelera e Incrível.'); return; }
+    if (parsed.slice(1).some(v => v === null || v <= 0) || (values[0].trim() !== '' && (parsed[0] === null || parsed[0] <= 0))) { setError('Informe metas positivas. Impulso pode ficar vazio se não se aplicar ao mês.'); return; }
+    const next = parsed.slice(1) as Month['goals'];
+    if (next[0] > next[1] || next[1] > next[2] || (parsed[0] !== null && parsed[0] > next[0])) { setError('Use valores em ordem: Impulso, Gatilho, Acelera e Incrível.'); return; }
     setBusy(true); setError('');
-    try { await onSave(next); }
+    try { await onSave(next, parsed[0]); }
     catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível salvar.'); }
     finally { setBusy(false); }
   }
   return <Modal title="Metas do mês" onClose={() => { if (!busy) onClose(); }}><p className="dialog-copy capitalize">{label}</p><form onSubmit={submit}><fieldset disabled={busy} className="form-fields">
-    {GOALS.map((name, i) => <div className="goal-field" key={name}><label className="field-label" htmlFor={`goal-${i}`}>{name}</label><div className="money-field"><span>R$</span><input id={`goal-${i}`} autoFocus={i === 0} inputMode="decimal" placeholder="0,00" value={values[i]} onChange={e => setValues(values.map((v, index) => index === i ? e.target.value : v))} /></div></div>)}
+    {ALL_GOALS.map((name, i) => <div className="goal-field" key={name}><label className="field-label" htmlFor={`goal-${i}`}>{name}{i === 0 ? ' (opcional)' : ''}</label><div className="money-field"><span>R$</span><input id={`goal-${i}`} autoFocus={i === 0} inputMode="decimal" placeholder="0,00" value={values[i]} onChange={e => setValues(values.map((v, index) => index === i ? e.target.value : v))} /></div></div>)}
     {error && <p className="form-error" role="alert">{error}</p>}<button type="submit" className="button full-width form-submit">{busy ? 'Salvando…' : 'Salvar metas'}</button>
   </fieldset></form></Modal>;
 }

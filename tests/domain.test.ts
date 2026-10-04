@@ -65,9 +65,9 @@ test('valores em reais são convertidos para centavos com validação', () => {
 
 test('backup completo faz roundtrip e rejeita corrupção', () => {
   const data = emptyData(); data.months['2026-09'] = createMonth('2026-09');
-  data.months['2026-09'].days['2026-09-03'] = { amount: 5000, off: true, closed: true };
+  data.months['2026-09'].days['2026-09-03'] = { amount: 5000, off: true, closed: true, prod: null };
   assert.deepEqual(validateData(JSON.parse(JSON.stringify(data))), data);
-  assert.throws(() => validateData({ version: 2, months: {} }));
+  assert.throws(() => validateData({ version: 999, months: {} }));
   data.months['2026-09'].days['2026-09-03'].amount = -1;
   assert.throws(() => validateData(data));
   data.months['2026-09'].days['2026-09-03'].amount = null;

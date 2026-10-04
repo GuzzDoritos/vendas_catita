@@ -66,12 +66,13 @@ export default async function handler(req: Request, res: ServerResponse) {
       let data, revision;
       try {
         const body = await readBody(req);
+        if ((body.data as { version?: number } | undefined)?.version !== 2) return send(409, { error: 'Uma nova versão está disponível. Recarregue a página antes de salvar.' });
         if (!Number.isSafeInteger(body.revision) || (body.revision as number) < 0) throw new Error('Revision');
         revision = body.revision as number;
         data = validateData(body.data);
         const today = todayKey();
         for (const month of Object.values(data.months)) for (const [date, day] of Object.entries(month.days)) {
-          if (date > today && (day.amount !== null || day.closed)) throw new Error('Future entry');
+          if (date > today && (day.amount !== null || day.closed || day.prod !== null || month.shifts[date]?.times.some(t => t !== null))) throw new Error('Future entry');
         }
       } catch { return send(400, { error: 'Dados inválidos. Confira valores, datas e o formato do backup. Vendas futuras não são permitidas.' }); }
       const nextRevision = await writeSnapshot(data, revision);

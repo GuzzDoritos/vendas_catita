@@ -8,3 +8,5 @@ dist/
 !.env.example
 # Planilha de referência local; não é necessária para executar o app.
 /metas Set.xlsx
+/Metas Boti.xlsx
+/test-results/

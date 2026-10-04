@@ -9,13 +9,13 @@ function db() {
 
 export async function readSnapshot(): Promise<{ data: Data; revision: number }> {
   const sql = db();
-  const [row] = await sql`SELECT catita_read() AS snapshot`;
+  const [row] = await sql`SELECT catita_read_v2() AS snapshot`;
   return row.snapshot;
 }
 
 export async function writeSnapshot(data: Data, revision: number): Promise<number | null> {
   const sql = db();
-  const [row] = await sql`SELECT catita_replace(${JSON.stringify(data)}::jsonb, ${revision}::bigint) AS revision`;
+  const [row] = await sql`SELECT catita_replace_v2(${JSON.stringify(data)}::jsonb, ${revision}::bigint) AS revision`;
   return row.revision === null ? null : Number(row.revision);
 }
 
